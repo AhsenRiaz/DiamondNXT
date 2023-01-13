@@ -10,7 +10,10 @@ contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    // Number of tokens minted (Also includes burned and reminted tokens)
+    // contract name
+    string public name;
+
+    // number of tokens minted (Also includes burned and reminted tokens)
     uint public totalMinted;
 
     struct Token {
@@ -40,7 +43,9 @@ contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
         _;
     }
 
-    constructor() ERC1155("ipfs://") {}
+    constructor(string memory _name) ERC1155("") {
+        name = _name;
+    }
 
     /**
      * @dev mint `amount` of tokens of token type `id`, assigns them to `account`
