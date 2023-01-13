@@ -43,29 +43,6 @@ contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
     constructor() ERC1155("ipfs://") {}
 
     /**
-    @dev See {IERC165-supportsInterface}.
-    */
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(ERC1155) returns (bool) {
-        return super.supportsInterface(interfaceId);
-    }
-
-    /**
-     * @dev returns metadata uri of a token
-     * @param tokenId (type uint256)
-     */
-    function uri(uint256 tokenId) public view override returns (string memory) {
-        require(exists(tokenId), "ERC1155Asset: Token does not exist");
-        return _tokens[tokenId].metadataUri;
-    }
-
-    function minterOf(uint256 tokenId) public view returns (address) {
-        require(exists(tokenId), "ERC1155Asset: Token does not exist");
-        return _tokens[tokenId].minter;
-    }
-
-    /**
      * @dev mint `amount` of tokens of token type `id`, assigns them to `account`
      * @param account (type address) - address to mint tokens to
      * @param id (type uint256) - token id
@@ -115,6 +92,29 @@ contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
             _tokens[ids[i]].metadataUri = metadataUris[i];
         }
         _mintBatch(account, ids, amounts, "");
+    }
+
+    /**
+    @dev See {IERC165-supportsInterface}.
+    */
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC1155) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @dev returns metadata uri of a token
+     * @param tokenId (type uint256)
+     */
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        require(exists(tokenId), "ERC1155Asset: Token does not exist");
+        return _tokens[tokenId].metadataUri;
+    }
+
+    function minterOf(uint256 tokenId) public view returns (address) {
+        require(exists(tokenId), "ERC1155Asset: Token does not exist");
+        return _tokens[tokenId].minter;
     }
 
     // The following functions are overrides required by solidity
