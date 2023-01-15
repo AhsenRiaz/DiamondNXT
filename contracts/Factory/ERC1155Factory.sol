@@ -30,10 +30,17 @@ contract ERC1155Factory is Initializable, ERC1155BaseFactory {
     function initialize(
         string memory _name,
         string memory _symbol
-    ) public initializer {
+    ) external initializer {
         init(_name, _symbol);
     }
 
+    /**
+     * @dev function to create an erc1155 collection
+     * @param _name (type string) - name of collection
+     * @param _symbol (type string) - symbol of collection
+     * @param _newOwner (type address) - address of the account creating the collection
+     * @return address of the erc1155 collection
+     */
     function createCollection(
         string memory _name,
         string memory _symbol,
@@ -51,6 +58,11 @@ contract ERC1155Factory is Initializable, ERC1155BaseFactory {
         return address(_erc1155);
     }
 
+    /**
+     * @dev create NFT for account
+     * @param _erc1155Collection (type address) - address of the collection contract
+     * @param _mintData (type sruct) - an object of parameters
+     */
     function createItem(
         address _erc1155Collection,
         Erc1155MintData calldata _mintData
@@ -63,6 +75,11 @@ contract ERC1155Factory is Initializable, ERC1155BaseFactory {
         );
     }
 
+    /**
+     * @dev create multiple NFTs for account
+     * @param _erc1155Collection (type address) - address of the collection contract
+     * @param _mintData (type sruct) - an object of parameters
+     */
     function createItemBatch(
         address _erc1155Collection,
         Erc1155MintDataBatch calldata _mintData
