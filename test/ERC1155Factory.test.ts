@@ -115,4 +115,31 @@ describe("ERC1155Factory Contract", () => {
       }
     });
   });
+
+  describe("Error checks", () => {
+    it("Should allow only owner to pause contract", async () => {
+      expect(await erc1155Factory.paused()).to.be.false;
+
+      await expect(erc1155Factory.connect(addr2).pause()).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      );
+
+      await erc1155Factory.connect(owner).pause();
+
+      expect(await erc1155Factory.paused()).to.be.true;
+    });
+
+    it("Should revert when paused", async () => {
+      const name = "RoboCopCollection #3";
+      const symbol = "RC";
+
+      await erc1155Factory.connect(owner).pause();
+
+      await expect(
+        erc1155Factory
+          .connect(addr2)
+          .createCollection(name, symbol, addr2.address)
+      ).to.be.revertedWith("Pausable: paused");
+    });
+  });
 });
