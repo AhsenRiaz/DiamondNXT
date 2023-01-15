@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-contract-sizer";
+import "hardhat-docgen";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -11,6 +12,11 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
     },
+  },
+  docgen: {
+    path: "./doc",
+    clear: true,
+    runOnCompile: true,
   },
 };
 
