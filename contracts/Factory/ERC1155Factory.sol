@@ -38,7 +38,7 @@ contract ERC1155Factory is Initializable, ERC1155BaseFactory {
         string memory _name,
         string memory _symbol,
         address _newOwner
-    ) external returns (address) {
+    ) external whenNotPaused returns (address) {
         //  Set Owner and Collaborator based on conditions
         ERC1155Asset _erc1155 = new ERC1155Asset(_name, _symbol, _newOwner);
         createdCollections[address(_erc1155)] = true;
