@@ -2,16 +2,15 @@
 pragma solidity 0.8.12;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../OwnableAndCollab.sol";
 
-contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
-
+contract ERC1155Asset is ERC1155Supply, OwnableAndCollab {
     // contract name
     string public name;
+
+    // contract symbol
+    string public symbol;
 
     // number of tokens minted (Also includes burned and reminted tokens)
     uint public totalMinted;
@@ -43,8 +42,13 @@ contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
         _;
     }
 
-    constructor(string memory _name) ERC1155("") {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        address _newOwner
+    ) ERC1155("") OwnableAndCollab(_newOwner) {
         name = _name;
+        symbol = _symbol;
     }
 
     /**
@@ -60,7 +64,7 @@ contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
         uint256 id,
         uint256 amount,
         string calldata metadataUri
-    ) external onlyOwner {
+    ) external {
         require(!exists(id), "Token already exists");
 
         totalMinted += 1;
@@ -117,6 +121,22 @@ contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
         return _tokens[tokenId].metadataUri;
     }
 
+    /**
+     * @dev Changes metadata uri of specified token. Also Freezes Metadata if specified
+     * @param tokenId (type uint256). id of the token to change metadata for
+     * @param metadataUri (type string). new metadataUri
+     */
+    function setTokenUri(
+        uint256 tokenId,
+        string memory metadataUri
+    ) public onlyMinter(tokenId) {
+        _tokens[tokenId].metadataUri = metadataUri;
+    }
+
+    /**
+     * @dev returns the mintere of a tokenId
+     * @param tokenId (type uint256) - id of the token
+     */
     function minterOf(uint256 tokenId) public view returns (address) {
         require(exists(tokenId), "ERC1155Asset: Token does not exist");
         return _tokens[tokenId].minter;
@@ -131,7 +151,7 @@ contract ERC1155Asset is ERC1155, ERC1155Supply, Ownable {
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) internal override(ERC1155Supply, ERC1155) {
+    ) internal override(ERC1155Supply) {
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 }

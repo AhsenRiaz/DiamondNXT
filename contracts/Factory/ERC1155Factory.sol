@@ -2,20 +2,15 @@
 pragma solidity 0.8.12;
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Create2.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "./ERC1155BaseFactory.sol";
 import "../Assets/ERC1155Asset.sol";
 
 contract ERC1155Factory is Initializable, ERC1155BaseFactory {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
-
     event ERC1155CollectionCreated(
         address indexed collection,
-        address indexed owner,
-        string name
+        string name,
+        string symbol,
+        address owner
     );
 
     struct Erc1155MintData {
@@ -41,12 +36,18 @@ contract ERC1155Factory is Initializable, ERC1155BaseFactory {
 
     function createCollection(
         string memory _name,
-        address _owner
+        string memory _symbol,
+        address _newOwner
     ) external returns (address) {
-        // Set Owner and Collaborator
-        ERC1155Asset _erc1155 = new ERC1155Asset(_name);
+        //  Set Owner and Collaborator based on conditions
+        ERC1155Asset _erc1155 = new ERC1155Asset(_name, _symbol, _newOwner);
         createdCollections[address(_erc1155)] = true;
-        emit ERC1155CollectionCreated(address(_erc1155), _owner, name);
+        emit ERC1155CollectionCreated(
+            address(_erc1155),
+            _name,
+            _symbol,
+            _newOwner
+        );
         return address(_erc1155);
     }
 
