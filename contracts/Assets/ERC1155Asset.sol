@@ -115,6 +115,7 @@ contract ERC1155Asset is ERC1155Supply, OwnableAndCollab {
     /**
      * @dev returns metadata uri of a token
      * @param tokenId (type uint256)
+     * @return the metadata of a tokenId
      */
     function uri(uint256 tokenId) public view override returns (string memory) {
         require(exists(tokenId), "ERC1155Asset: Token does not exist");
@@ -136,6 +137,7 @@ contract ERC1155Asset is ERC1155Supply, OwnableAndCollab {
     /**
      * @dev returns the mintere of a tokenId
      * @param tokenId (type uint256) - id of the token
+     * @return address of the minter of a tokenId
      */
     function minterOf(uint256 tokenId) public view returns (address) {
         require(exists(tokenId), "ERC1155Asset: Token does not exist");
