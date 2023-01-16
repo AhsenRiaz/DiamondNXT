@@ -88,10 +88,88 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         allowedPaymentTokens[address(0)] = true;
     }
 
-    function list(ListData memory _data) external {
+    /**
+     * @dev create a listing for the given token id
+     * @param _data (type ListData )
+     */
+    function list(ListData memory _data) public whenNotPaused {
         validateListing(_data);
+
+        bytes32 _listingId = computeListingId(
+            _data.nftContract,
+            msg.sender,
+            _data.tokenId
+        );
+
+        Listing storage _listing = listings[_listingId];
+
+        if (_listing.initialized != true) {
+            _listing.initialized = true;
+            _listing.nftContract = _data.nftContract;
+            _listing.tokenId = _data.tokenId;
+            _listing.owner = msg.sender;
+        }
+
+        _listing.listingType = _data.listingType;
+        _listing.price = _data.price;
+        _listing.paymentToken = _data.paymentToken;
+        _listing.startTime = _data.startTime;
+        _listing.endTime = _data.endTime;
+
+        emit NftList(
+            msg.sender,
+            _data.listingType,
+            _data.nftContract,
+            _data.tokenId,
+            _data.price,
+            _data.startTime,
+            _data.endTime
+        );
     }
 
+    /**
+     * @dev remove the listing for the given token id
+     * @param nftContract (type address) - address of the nft contract
+     * @param tokenId (type uint256) - token id of the nft to delist
+     */
+    function delist(address nftContract, uint256 tokenId) public whenNotPaused {
+        bytes32 _listingId = computeListingId(nftContract, msg.sender, tokenId);
+        require(
+            listings[_listingId].initialized,
+            "Marketplace: Listing not initialized"
+        );
+
+        require(
+            listings[_listingId].listingType != LISTING_TYPE.NONE,
+            "Marketplace: Listing not set for sale"
+        );
+
+        _clearListing(_listingId);
+    }
+
+    function listBatch(ListData[] memory _data) public whenNotPaused {
+        for (uint i = 0; i < _data.length; i++) {
+            list(_data[i]);
+        }
+    }
+
+    /**
+     * @dev pause
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev unpause contract
+     */
+    function unpause() public onlyOwner {
+        _unpause();
+    }
+
+    /**
+     * @dev validate the listing provided by the user
+     */
     function validateListing(ListData memory _data) public view {
         bool isERC1155 = _checkContractIsERC1155(_data.nftContract);
         require(
@@ -121,19 +199,37 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @dev pause
+     * @dev create a unique listing id
+     * @param nftContract (type address) - address of the nft contract
+     * @param owner (type address) - address of the owner
+     * @param tokenId (type tokenId) - token id of the nft
+     * @return the unique listing id
      */
-    function pause() public onlyOwner {
-        _pause();
+    function computeListingId(
+        address nftContract,
+        address owner,
+        uint256 tokenId
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(nftContract, owner, tokenId));
     }
 
     /**
-     * @dev unpause contract
+     * @dev deletes the listing from the smart contract
+     * @param _listingId (type bytes32)
      */
-    function unpause() public onlyOwner {
-        _unpause();
+    function _clearListing(bytes32 _listingId) internal {
+        Listing storage _listing = listings[_listingId];
+
+        _listing.listingType = LISTING_TYPE.NONE;
+        delete _listing.price;
+        delete _listing.startTime;
+        delete _listing.endTime;
     }
 
+    /**
+     * @dev checks if contract is an ERC1155 implementation
+     * @return a bool
+     */
     function _checkContractIsERC1155(
         address _contract
     ) internal view returns (bool) {
@@ -143,6 +239,9 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         return success;
     }
 
+    /**
+     * @dev checks the balance
+     */
     function _balanceOfERC1155(
         address _nftContract,
         address _owner,
