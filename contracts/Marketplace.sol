@@ -228,9 +228,9 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
                 "Seller has insufficient ERC1155 Tokens"
             );
         }
-        if (listings[_listingId].listingType == LISTING_TYPE.AUCTION) {
+        if (listing.listingType == LISTING_TYPE.AUCTION) {
             require(
-                listings[_listingId].listedQuantity == _data.quantity,
+                listing.listedQuantity == _data.quantity,
                 "Marketplace: Buy quantity must be equal to listed quantity in auction!"
             );
         }
@@ -241,16 +241,16 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev create a unique listing id
      * @param nftContract (type address) - address of the nft contract
-     * @param owner (type address) - address of the owner
+     * @param _owner (type address) - address of the owner
      * @param tokenId (type tokenId) - token id of the nft
      * @return the unique listing id
      */
     function computeListingId(
         address nftContract,
-        address owner,
+        address _owner,
         uint256 tokenId
     ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(nftContract, owner, tokenId));
+        return keccak256(abi.encodePacked(nftContract, _owner, tokenId));
     }
 
     /**
