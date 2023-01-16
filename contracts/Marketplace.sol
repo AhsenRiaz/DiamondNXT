@@ -26,8 +26,8 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         bool initialized;
         address owner;
         address nftContract;
-        address paymentToken;
         LISTING_TYPE listingType;
+        uint256 listedQuantity;
         uint256 tokenId;
         uint256 price;
         uint256 startTime;
@@ -38,7 +38,7 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
     struct ListData {
         LISTING_TYPE listingType;
         address nftContract;
-        address paymentToken;
+        uint listQuantity;
         uint256 tokenId;
         uint256 price;
         uint256 startTime;
@@ -111,8 +111,8 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         }
 
         _listing.listingType = _data.listingType;
+        _listing.listedQuantity = _data.listQuantity;
         _listing.price = _data.price;
-        _listing.paymentToken = _data.paymentToken;
         _listing.startTime = _data.startTime;
         _listing.endTime = _data.endTime;
 
@@ -127,6 +127,13 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         );
     }
 
+    function buy(
+        BuyData memory _data
+    ) external payable nonReentrant whenNotPaused {
+        bytes32 listingId = validateBuy(_data);
+        _trade(listingId, _data.quantity);
+    }
+
     /**
      * @dev remove the listing for the given token id
      * @param nftContract (type address) - address of the nft contract
@@ -136,7 +143,7 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         bytes32 _listingId = computeListingId(nftContract, msg.sender, tokenId);
         require(
             listings[_listingId].initialized,
-            "Marketplace: Listing not initialized"
+            "Marketplace: Listing not initi alized"
         );
 
         require(
@@ -186,16 +193,49 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         require(_data.price > 0, "Marketplace: Price must be greater than 0");
 
         require(
-            allowedPaymentTokens[_data.paymentToken] == true,
-            "Marketplace: Invalid payment token"
-        );
-
-        require(
             _data.tokenId ==
                 _balanceOfERC1155(_data.nftContract, msg.sender, _data.tokenId)
         );
 
         require(_isTokensApproved(_data.nftContract, msg.sender));
+    }
+
+    function validateBuy(BuyData memory _data) public view returns (bytes32) {
+        require(
+            msg.sender != _data.fromAddress,
+            "Marketplace: Cannot self buy"
+        );
+
+        bytes32 _listingId = computeListingId(
+            _data.nftContract,
+            _data.fromAddress,
+            _data.tokenId
+        );
+
+        Listing memory listing = listings[_listingId];
+
+        _isForSale(_listingId);
+        bool isERC1155 = _checkContractIsERC1155(_data.nftContract);
+        if (isERC1155) {
+            uint sellerTokenBalance = _balanceOfERC1155(
+                _data.nftContract,
+                _data.fromAddress,
+                _data.tokenId
+            );
+            // write a require check based on list quantity after research
+            require(
+                sellerTokenBalance >= _data.quantity,
+                "Seller has insufficient ERC1155 Tokens"
+            );
+        }
+        if (listings[_listingId].listingType == LISTING_TYPE.AUCTION) {
+            require(
+                listings[_listingId].listedQuantity == _data.quantity,
+                "Marketplace: Buy quantity must be equal to listed quantity in auction!"
+            );
+        }
+
+        return (_listingId);
     }
 
     /**
@@ -214,6 +254,34 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
+     * @dev trade
+     */
+    function _trade(bytes32 _listindId, uint256 _quantity) internal {
+        Listing memory _sellerListing = listings[_listindId];
+        TradeInfo memory tradeInfo;
+
+        tradeInfo.totalPrice = _sellerListing.price * _quantity;
+        tradeInfo.owner = payable(_sellerListing.owner);
+        tradeInfo.buyer = payable(msg.sender);
+
+        require(
+            msg.value >= tradeInfo.totalPrice,
+            "Marketplace: Insufficient balance"
+        );
+
+        (bool success, ) = tradeInfo.owner.call{value: msg.value}("");
+        require(success, "Marketplace: Payment failed");
+
+        IERC1155(_sellerListing.nftContract).safeTransferFrom(
+            tradeInfo.owner,
+            tradeInfo.buyer,
+            _sellerListing.tokenId,
+            _quantity,
+            "0x"
+        );
+    }
+
+    /**
      * @dev deletes the listing from the smart contract
      * @param _listingId (type bytes32)
      */
@@ -224,6 +292,37 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         delete _listing.price;
         delete _listing.startTime;
         delete _listing.endTime;
+    }
+
+    /**
+     * @dev
+     */
+    function _isForSale(bytes32 _listingId) internal view {
+        require(
+            listings[_listingId].initialized,
+            "Marketplace: Not initialized"
+        );
+
+        require(
+            listings[_listingId].listingType != LISTING_TYPE.NONE,
+            "Marketplace: Not for sale"
+        );
+        _isActive(_listingId);
+    }
+
+    function _isActive(bytes32 _listingId) internal view {
+        require(
+            listings[_listingId].startTime < _currentTime(),
+            "Marketplace: Sale not started "
+        );
+
+        if (
+            listings[_listingId].listingType == LISTING_TYPE.FIXED_PRICE &&
+            (listings[_listingId].endTime != 0 &&
+                _currentTime() > listings[_listingId].endTime)
+        ) {
+            revert("Listing has expired");
+        }
     }
 
     /**
@@ -257,5 +356,9 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
     ) internal view returns (bool) {
         IERC1155 _token = IERC1155(_nftContract);
         return _token.isApprovedForAll(_owner, _nftContract);
+    }
+
+    function _currentTime() internal view virtual returns (uint256) {
+        return block.timestamp;
     }
 }
