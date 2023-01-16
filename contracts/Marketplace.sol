@@ -12,9 +12,9 @@ import "@openzeppelin/contracts/interfaces/IERC165.sol";
 import "./OwnableAndCollab.sol";
 
 contract Marketplace is ReentrancyGuard, Ownable, Pausable {
-    string public constant NAME = "";
+    string public constant NAME = "DiamondNXT Markecplace";
 
-    string public constant SYMBOL = "";
+    string public constant SYMBOL = "DNXT";
 
     enum LISTING_TYPE {
         NONE,
@@ -61,8 +61,6 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
 
     mapping(bytes32 => Listing) private listings;
 
-    mapping(address => bool) public allowedPaymentTokens;
-
     bytes4 private constant _INTERFACE_ID_ERC1155 = 0xd9b67a26;
 
     event Purchase(
@@ -84,9 +82,7 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         uint256 endTime
     );
 
-    constructor() {
-        allowedPaymentTokens[address(0)] = true;
-    }
+    constructor() {}
 
     /**
      * @dev create a listing for the given token id
