@@ -6,7 +6,7 @@ import { List, ListingType, Token, Tokens } from "./utils";
 
 describe("Marketplace Contract", () => {
   let marketplace: Marketplace;
-  let erc1155Contract: ERC1155Asset;
+  let erc1155Asset: ERC1155Asset;
 
   let owner: SignerWithAddress;
   let addr1: SignerWithAddress;
@@ -32,7 +32,7 @@ describe("Marketplace Contract", () => {
 
     marketplace = await marketplace_factory.deploy();
 
-    erc1155Contract = await erc1155_factory.deploy(
+    erc1155Asset = await erc1155_factory.deploy(
       "RoboCop",
       "RC",
       owner.address
@@ -46,7 +46,7 @@ describe("Marketplace Contract", () => {
       assert(marketplace.address);
     });
     it("should expect the deployment address of marketplace contract", async () => {
-      assert(erc1155Contract.address);
+      assert(erc1155Asset.address);
     });
   });
 
@@ -69,13 +69,13 @@ describe("Marketplace Contract", () => {
         metadataUri: `ipfs://token-5`,
       };
 
-      await erc1155Contract
+      await erc1155Asset
         .connect(owner)
         .mint(token1.to, token1.tokenId, token1.amount, token1.metadataUri);
 
       const payload: List = {
         tokenId: "5",
-        nftContract: erc1155Contract.address,
+        nftContract: erc1155Asset.address,
         listedQuantity: "1",
         listingType: ListingType.FIXED_PRICE,
         startTime: "0",
@@ -114,13 +114,13 @@ describe("Marketplace Contract", () => {
         metadataUri: `ipfs://token-5`,
       };
 
-      await erc1155Contract
+      await erc1155Asset
         .connect(owner)
         .mint(token1.to, token1.tokenId, token1.amount, token1.metadataUri);
 
       const payload: List = {
         tokenId: "5",
-        nftContract: erc1155Contract.address,
+        nftContract: erc1155Asset.address,
         listedQuantity: "1",
         listingType: ListingType.FIXED_PRICE,
         startTime: "0",
@@ -185,7 +185,7 @@ describe("Marketplace Contract", () => {
     let payloads: Marketplace.ListDataStruct[] = [
       {
         tokenId: "5",
-        nftContract: erc1155Contract.address,
+        nftContract: erc1155Asset.address,
         listedQuantity: "1",
         listingType: ListingType.FIXED_PRICE,
         startTime: "0",
@@ -194,7 +194,7 @@ describe("Marketplace Contract", () => {
       },
       {
         tokenId: "6",
-        nftContract: erc1155Contract.address,
+        nftContract: erc1155Asset.address,
         listedQuantity: "1",
         listingType: ListingType.FIXED_PRICE,
         startTime: "0",
@@ -203,7 +203,7 @@ describe("Marketplace Contract", () => {
       },
       {
         tokenId: "8",
-        nftContract: erc1155Contract.address,
+        nftContract: erc1155Asset.address,
         listedQuantity: "5",
         listingType: ListingType.FIXED_PRICE,
         startTime: "0",
@@ -213,7 +213,7 @@ describe("Marketplace Contract", () => {
     ];
 
     for (var i = 0; i < batchTokens.length; i++) {
-      await erc1155Contract
+      await erc1155Asset
         .connect(owner)
         .mint(
           batchTokens[i].to,
