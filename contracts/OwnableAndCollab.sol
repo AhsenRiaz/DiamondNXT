@@ -38,7 +38,7 @@ contract OwnableAndCollab {
      */
     modifier onlyOwnerAndCollaborator() {
         require(
-            owner() == msg.sender || _collaborators[msg.sender] == true,
+            msg.sender == owner() || _collaborators[msg.sender] == true,
             "OwnableAndCollab: caller is not the owner or a collaborator"
         );
         _;
