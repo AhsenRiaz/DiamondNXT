@@ -3,6 +3,8 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ERC1155Factory, ERC1155Factory__factory } from "../typechain-types";
 
+// Test CreateItemsBatch function
+
 describe("ERC1155Factory Contract", () => {
   let erc1155Factory: ERC1155Factory;
   let owner: SignerWithAddress;
@@ -42,8 +44,8 @@ describe("ERC1155Factory Contract", () => {
       const symbol = "RC";
 
       const tx = await erc1155Factory
-        .connect(addr1)
-        .createCollection(name, symbol, addr1.address);
+        .connect(owner)
+        .createCollection(name, symbol, owner.address);
       const res = await tx.wait();
 
       if (res.events && res.events[1] && res.events[1].args) {
@@ -57,6 +59,8 @@ describe("ERC1155Factory Contract", () => {
           "ERC1155Asset",
           collectionAddress
         );
+
+        await collection.setCollaborator(erc1155Factory.address, true);
 
         expect(await erc1155Factory.createdCollections(collectionAddress)).to.be
           .true;
@@ -79,8 +83,8 @@ describe("ERC1155Factory Contract", () => {
       };
 
       const tx = await erc1155Factory
-        .connect(addr1)
-        .createCollection(name, symbol, addr1.address);
+        .connect(owner)
+        .createCollection(name, symbol, owner.address);
       const res = await tx.wait();
 
       if (res.events && res.events[1] && res.events[1].args) {
@@ -98,9 +102,11 @@ describe("ERC1155Factory Contract", () => {
           collectionAddress
         );
 
+        await collection.setCollaborator(erc1155Factory.address, true);
+
         expect(await collection.name()).to.equal(name);
         expect(await collection.symbol()).to.equal(symbol);
-        expect(await collection.owner()).to.equal(addr1.address);
+        expect(await collection.owner()).to.equal(owner.address);
         expect(await collection.totalMinted()).to.equal(0);
 
         await erc1155Factory
