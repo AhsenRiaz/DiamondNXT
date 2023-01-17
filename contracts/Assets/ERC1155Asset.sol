@@ -64,7 +64,7 @@ contract ERC1155Asset is ERC1155Supply, OwnableAndCollab {
         uint256 id,
         uint256 amount,
         string calldata metadataUri
-    ) external {
+    ) external onlyOwnerAndCollaborator {
         require(!exists(id), "Token already exists");
 
         totalMinted += 1;
@@ -88,7 +88,7 @@ contract ERC1155Asset is ERC1155Supply, OwnableAndCollab {
         uint256[] calldata ids,
         uint256[] calldata amounts,
         string[] calldata metadataUris
-    ) external {
+    ) external onlyOwnerAndCollaborator {
         uint arrayLength = ids.length;
         require(
             amounts.length == arrayLength && metadataUris.length == arrayLength,
@@ -96,7 +96,7 @@ contract ERC1155Asset is ERC1155Supply, OwnableAndCollab {
         );
         totalMinted += arrayLength;
         for (uint i = 0; i < arrayLength; i++) {
-            require(exists(ids[i]), "ERC1155Asset: A token id already exists");
+            require(!exists(ids[i]), "ERC1155Asset: Token already exists");
             _tokens[ids[i]].minter = account;
             _tokens[ids[i]].metadataUri = metadataUris[i];
         }
