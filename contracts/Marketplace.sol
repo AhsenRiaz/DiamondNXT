@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/interfaces/IERC165.sol";
 import "./OwnableAndCollab.sol";
 
 contract Marketplace is ReentrancyGuard, Ownable, Pausable {
-    string public constant NAME = "DiamondNXT Markecplace";
+    string public constant NAME = "DiamondNXT Marketplace";
 
     string public constant SYMBOL = "DNXT";
 
@@ -38,7 +38,7 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
     struct ListData {
         LISTING_TYPE listingType;
         address nftContract;
-        uint listQuantity;
+        uint listedQuantity;
         uint256 tokenId;
         uint256 price;
         uint256 startTime;
@@ -85,6 +85,19 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
     constructor() {}
 
     /**
+     * @dev get listing details
+     * @param tokenId (type uint256) - id of the token to get the listing details for
+     */
+    function getListingDetails(
+        address nftContract,
+        address owner,
+        uint256 tokenId
+    ) public view returns (Listing memory) {
+        bytes32 _listingId = computeListingId(nftContract, owner, tokenId);
+        return listings[_listingId];
+    }
+
+    /**
      * @dev create a listing for the given token id
      * @param _data (type ListData )
      */
@@ -107,7 +120,7 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         }
 
         _listing.listingType = _data.listingType;
-        _listing.listedQuantity = _data.listQuantity;
+        _listing.listedQuantity = _data.listedQuantity;
         _listing.price = _data.price;
         _listing.startTime = _data.startTime;
         _listing.endTime = _data.endTime;
@@ -189,11 +202,10 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         require(_data.price > 0, "Marketplace: Price must be greater than 0");
 
         require(
-            _data.tokenId ==
-                _balanceOfERC1155(_data.nftContract, msg.sender, _data.tokenId)
+            _balanceOfERC1155(_data.nftContract, msg.sender, _data.tokenId) >=
+                _data.listedQuantity,
+            "Marketplace: Insufficient ERC1155 token balance"
         );
-
-        require(_isTokensApproved(_data.nftContract, msg.sender));
     }
 
     function validateBuy(BuyData memory _data) public view returns (bytes32) {
@@ -288,6 +300,12 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         delete _listing.price;
         delete _listing.startTime;
         delete _listing.endTime;
+        delete _listing.listedQuantity;
+        delete _listing.listingType;
+        delete _listing.tokenId;
+        delete _listing.initialized;
+        delete _listing.nftContract;
+        delete _listing.owner;
     }
 
     /**
