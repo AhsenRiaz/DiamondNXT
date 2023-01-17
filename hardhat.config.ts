@@ -13,11 +13,11 @@ const config: HardhatUserConfig = {
       },
     },
   },
-  // docgen: {
-  //   path: "./doc",
-  //   clear: true,
-  //   runOnCompile: true,
-  // },
+  docgen: {
+    path: "./doc",
+    clear: true,
+    runOnCompile: true,
+  },
 };
 
 export default config;
