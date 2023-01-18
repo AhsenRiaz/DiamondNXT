@@ -2,7 +2,7 @@ import { expect, assert } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Marketplace, ERC1155Asset, ERC1155Factory } from "../typechain-types";
-import { Token } from "./utils";
+import { List, LISTING_TYPES, Token } from "./utils";
 
 describe("Testing the system", () => {
   let erc1155Factory: ERC1155Factory;
@@ -162,5 +162,72 @@ describe("Testing the system", () => {
         }
       }
     });
+  });
+
+  describe("Marketplace Contract", () => {
+    token = {
+      to: "",
+      tokenId: 3,
+      amount: 2,
+      metadataUri: "https://ipfs/token/3",
+    };
+
+    const payload: List = {
+      tokenId: "3",
+      nftContract: "",
+      listedQuantity: "1",
+      listingType: LISTING_TYPES.FIXED_PRICE,
+      startTime: "0",
+      endTime: (new Date("2077-12-10").getTime() / 1000).toFixed(0),
+      price: "2000000000000000000",
+    };
+
+    it("should list the collection", async () => {
+      let name = "RoboCop Collectioin";
+      let symbol = "RC";
+      token.to = addr1.address;
+
+      let tx = await erc1155Factory
+        .connect(addr1)
+        .createCollection(name, symbol, addr1.address);
+
+      const res = await tx.wait();
+
+      if (res.events && res.events[1] && res.events[1].args) {
+        const collectionAddress = res.events && res.events[1].args.collection;
+
+        const collection = await ethers.getContractAt(
+          "ERC1155Asset",
+          collectionAddress
+        );
+
+        payload.nftContract = collection.address;
+
+        await collection
+          .connect(addr1)
+          .setCollaborator(erc1155Factory.address, true);
+
+        await erc1155Factory
+          .connect(addr1)
+          .createItem(collection.address, token);
+
+        await marketplace
+          .connect(addr1)
+          .list(payload, { value: ethers.utils.parseEther("1") });
+
+        let { nftContract, tokenId, listedQuantity, price } = payload;
+        let listingDetails = await marketplace.getListingDetails(
+          nftContract,
+          addr1.address,
+          tokenId
+        );
+
+        expect(listingDetails.tokenId).to.eq(tokenId);
+        expect(listingDetails.listedQuantity).to.eq(listedQuantity);
+        expect(listingDetails.price).to.eq(price);
+      }
+    });
+
+    
   });
 });
