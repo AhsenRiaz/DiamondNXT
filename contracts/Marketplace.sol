@@ -65,7 +65,27 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         address fromAddress;
     }
 
+    struct Bid {
+        address nftContract;
+        uint256 tokenId;
+        address[] bidders;
+        uint256[] prices;
+        uint256[] quantities;
+        uint256[] bidExpirations;
+    }
+
+    struct BidData {
+        address nftContract;
+        uint256 tokenId;
+        address bidder;
+        uint256 price;
+        uint256 quantity;
+        uint256 bidExpiration;
+    }
+
     mapping(bytes32 => Listing) private listings;
+
+    mapping(bytes32 => Bid) private bids;
 
     event Purchase(
         address indexed nftContract,
@@ -91,6 +111,15 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         address indexed owner,
         uint256 tokenId,
         uint256 newPrice
+    );
+
+    event BidOffer(
+        address indexed nftContract,
+        uint256 indexed tokenId,
+        address indexed bidder,
+        uint256 price,
+        uint256 quantity,
+        uint256 bidExpiration
     );
 
     constructor(address[] memory accounts, uint256 _listingFees) {
@@ -171,6 +200,23 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
     ) external payable nonReentrant whenNotPaused {
         bytes32 listingId = validateBuy(_data);
         _trade(listingId, _data.quantity);
+    }
+
+    function bid(BidData memory _bidParam) external {
+        require(
+            _bidParam.nftContract != address(0),
+            "Marketplace: NftContract cannot be zero address"
+        );
+
+        require(_bidParam.tokenId != 0, "Marketplace: Token id cannot be zero");
+
+        bytes32 bidId = computeBidId(_bidParam.nftContract, _bidParam.tokenId);
+
+        Bid storage _bid = bids[bidId];
+        _bid.bidders.push(_bidParam.bidder);
+        _bid.prices.push(_bidParam.price);
+        _bid.quantities.push(_bidParam.quantity);
+        _bid.bidExpirations.push(_bidParam.bidExpiration);
     }
 
     /**
@@ -289,6 +335,13 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         uint256 tokenId
     ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(nftContract, _owner, tokenId));
+    }
+
+    function computeBidId(
+        address nftContract,
+        uint256 tokenId
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(nftContract, tokenId));
     }
 
     function updatePrice(
