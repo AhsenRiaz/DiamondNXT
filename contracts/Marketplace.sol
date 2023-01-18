@@ -86,6 +86,13 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         uint256 endTime
     );
 
+    event PriceUpdate(
+        address indexed nftContract,
+        address indexed owner,
+        uint256 tokenId,
+        uint256 newPrice
+    );
+
     constructor(address[] memory accounts, uint256 _listingFees) {
         for (uint i = 0; i < accounts.length; i++) {
             whitelist[accounts[i]] = true;
@@ -284,8 +291,21 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         return keccak256(abi.encodePacked(nftContract, _owner, tokenId));
     }
 
+    function updatePrice(
+        address nftContract,
+        address _owner,
+        uint256 tokenId,
+        uint256 newPrice
+    ) external {
+        bytes32 _listindId = computeListingId(nftContract, _owner, tokenId);
+        Listing storage listing = listings[_listindId];
+        listing.price = newPrice;
+
+        emit PriceUpdate(nftContract, _owner, tokenId, newPrice);
+    }
+
     /**
-     * @dev trade
+     * @dev trade the token
      */
     function _trade(bytes32 _listindId, uint256 _quantity) internal {
         Listing memory _sellerListing = listings[_listindId];
