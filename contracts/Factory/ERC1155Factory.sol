@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.12;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./ERC1155BaseFactory.sol";
 import "../Assets/ERC1155Asset.sol";
 
 contract ERC1155Factory is Initializable, ERC1155BaseFactory {
+    // owner 0xf1
+
     event ERC1155CollectionCreated(
         address indexed collection,
         string name,
@@ -47,6 +50,10 @@ contract ERC1155Factory is Initializable, ERC1155BaseFactory {
         address _newOwner
     ) external whenNotPaused returns (address) {
         //  Set Owner and Collaborator based on conditions
+        require(
+            _newOwner != address(0),
+            "ERC1155Factory: Owner cannot be address zero"
+        );
         ERC1155Asset _erc1155 = new ERC1155Asset(_name, _symbol, _newOwner);
         createdCollections[address(_erc1155)] = true;
         emit ERC1155CollectionCreated(
