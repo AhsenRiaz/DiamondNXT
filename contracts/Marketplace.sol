@@ -16,6 +16,12 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
 
     string public constant SYMBOL = "DNXT";
 
+    bytes4 private constant _INTERFACE_ID_ERC1155 = 0xd9b67a26;
+
+    uint256 public immutable LISTING_FEES;
+
+    mapping(address => bool) private whitelist;
+
     enum LISTING_TYPE {
         NONE,
         FIXED_PRICE,
@@ -61,8 +67,6 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
 
     mapping(bytes32 => Listing) private listings;
 
-    bytes4 private constant _INTERFACE_ID_ERC1155 = 0xd9b67a26;
-
     event Purchase(
         address indexed nftContract,
         address indexed from,
@@ -82,7 +86,12 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         uint256 endTime
     );
 
-    constructor() {}
+    constructor(address[] memory accounts, uint256 _listingFees) {
+        for (uint i = 0; i < accounts.length; i++) {
+            whitelist[accounts[i]] = true;
+        }
+        LISTING_FEES = _listingFees;
+    }
 
     /**
      * @dev get listing details
@@ -97,11 +106,22 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         return listings[_listingId];
     }
 
+    function isAccountWhitelisted(address account) public view returns (bool) {
+        return whitelist[account];
+    }
+
     /**
      * @dev create a listing for the given token id
      * @param _data (type ListData )
      */
-    function list(ListData memory _data) public whenNotPaused {
+    function list(ListData memory _data) public payable whenNotPaused {
+        if (!whitelist[msg.sender]) {
+            require(
+                msg.value >= LISTING_FEES,
+                "Marketplace: Insufficient listing fees"
+            );
+        }
+
         validateListing(_data);
 
         bytes32 _listingId = computeListingId(
@@ -124,6 +144,9 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         _listing.price = _data.price;
         _listing.startTime = _data.startTime;
         _listing.endTime = _data.endTime;
+
+        (bool success, ) = payable(owner()).call{value: msg.value}("");
+        require(success, "Marketplace: List transaction failedI");
 
         emit NftList(
             msg.sender,
@@ -152,7 +175,7 @@ contract Marketplace is ReentrancyGuard, Ownable, Pausable {
         bytes32 _listingId = computeListingId(nftContract, msg.sender, tokenId);
         require(
             listings[_listingId].initialized,
-            "Marketplace: Listing not initi alized"
+            "Marketplace: Listing not initialized"
         );
 
         require(
