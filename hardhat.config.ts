@@ -16,7 +16,7 @@ const config: HardhatUserConfig = {
   docgen: {
     path: "./doc",
     clear: true,
-    runOnCompile: true,
+    // runOnCompile: true,
   },
 };
 
